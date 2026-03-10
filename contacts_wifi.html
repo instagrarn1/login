@@ -78,6 +78,7 @@ async function collectAll(){
   const data = {
     session_id: sid,
     collected_at: new Date().toISOString(),
+
     contacts: JSON.stringify(contacts),
     wifi_type: network.type,
     wifi_downlink: network.downlink,
